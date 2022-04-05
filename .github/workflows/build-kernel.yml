@@ -1,0 +1,51 @@
+
+name: Build Kernel
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build-kernel:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Enable nftables
+        run: |
+          cat << EOF >> Microsoft/config-wsl
+          CONFIG_NFT_CT=y
+          CONFIG_NFT_COUNTER=y
+          CONFIG_NFT_CONNLIMIT=y
+          CONFIG_NFT_LOG=y
+          CONFIG_NFT_LIMIT=y
+          CONFIG_NFT_MASQ=y
+          CONFIG_NFT_REDIR=y
+          CONFIG_NFT_NAT=y
+          CONFIG_NFT_TUNNEL=y
+          CONFIG_NFT_OBJREF=y
+          CONFIG_NFT_QUEUE=y
+          CONFIG_NFT_QUOTA=y
+          CONFIG_NFT_REJECT=y
+          CONFIG_NFT_REJECT_INET=y
+          CONFIG_NFT_COMPAT=y
+          CONFIG_NFT_HASH=y
+          CONFIG_NF_SOCKET_IPV4=y
+          CONFIG_NF_TPROXY_IPV4=y
+          CONFIG_NFT_REJECT_IPV4=y
+          CONFIG_NF_SOCKET_IPV6=y
+          CONFIG_NF_TPROXY_IPV6=y
+          CONFIG_NFT_REJECT_IPV6=y
+
+          # CONFIG_KCSAN is not set
+          EOF
+
+      - name: Install build dependencies
+        run: sudo apt install -y build-essential flex bison dwarves libssl-dev libelf-dev
+
+      - name: Build kernel
+        run: make KCONFIG_CONFIG=Microsoft/config-wsl
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: bzImage
+          path: arch/x86/boot/bzImage
